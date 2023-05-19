@@ -1,0 +1,30 @@
+---
+dependency:
+  name: galaxy
+
+driver:
+  name: delegated
+
+platforms:
+  - name: stephrobert_{{ cookiecutter.role_name }}
+    image_name: "Ubuntu-22.04-2023.02.21-0"
+    image_owner: "Outscale"
+    instance_type: tinav5.c2r2p2
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_FORCE_COLOR: "true"
+  options:
+    v: true
+
+verifier:
+  name: testinfra
+  options:
+    verbose: true
+    s: true
+
+lint: |
+  set -e
+  yamllint .
+  ansible-lint

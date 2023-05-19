@@ -1,0 +1,9 @@
+---
+- name: Destroy VM
+  community.general.terraform:
+    project_path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/terraform/{{ platform.workspace }}"
+    state: absent
+- name: Destroy Directory
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/terraform/{{ platform.workspace }}"
+    state: absent

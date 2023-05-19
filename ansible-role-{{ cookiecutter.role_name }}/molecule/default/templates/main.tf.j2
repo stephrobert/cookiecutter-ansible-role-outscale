@@ -1,0 +1,147 @@
+
+terraform {
+  required_providers {
+    outscale = {
+      source  = "outscale/outscale"
+      version = "{{ platform.provider_version }}"
+    }
+  }
+}
+
+provider "outscale" {
+  region        = "{{ platform.region }}"
+  access_key_id = "{{ platform.accessid }}"
+  secret_key_id = "{{ platform.secretid }}"
+}
+
+variable "vm_type" {
+  type = string
+  default = "{{ platform.instance_type }}"
+}
+
+variable "run_name" {
+  type = string
+  default = "{{ run_id }}"
+}
+
+variable "region" {
+  type    = string
+  default = "{{ platform.region }}"
+}
+
+variable "image_name" {
+  type = string
+  default = "{{ platform.image_name }}"
+}
+
+variable "instance_name" {
+  type = string
+  default = "{{ platform.name }}"
+}
+
+variable "ssh_user" {
+  type = string
+  default = "{{ platform.ssh_user }}"
+}
+
+variable "ssh_port" {
+  type = number
+  default = "{{ platform.ssh_port }}"
+}
+
+variable "authorized_range_ip" {
+  type = list
+  default = {{ platform.authorized_range_ip | to_json }}
+}
+
+variable "private_key_path" {
+  type = string
+  default = "{{ platform.private_key_path}}"
+}
+
+variable "public_key_path" {
+  type = string
+  default = "{{ platform.public_key_path}}"
+}
+
+data "outscale_image" "image" {
+
+  filter {
+    name   = "image_names"
+    values = [var.image_name]
+  }
+}
+
+resource "outscale_keypair" "ssh-keypair" {
+  keypair_name = format("molecule-%s-%s",var.instance_name,var.run_name)
+  public_key   = file(var.public_key_path)
+}
+
+resource "outscale_security_group" "security_group_molecule" {
+    description         = "Molecule"
+    security_group_name = format("molecule-%s-%s",var.instance_name,var.run_name)
+}
+
+resource "outscale_security_group_rule" "security_group_molecule_ssh" {
+    flow              = "Inbound"
+    security_group_id = outscale_security_group.security_group_molecule.security_group_id
+    rules {
+        from_port_range = var.ssh_port
+        to_port_range   = var.ssh_port
+        ip_protocol     = "tcp"
+        ip_ranges = var.authorized_range_ip
+    }
+}
+
+resource "outscale_vm" "my_vm" {
+    image_id                 = data.outscale_image.image.id
+    vm_type                  = var.vm_type
+    keypair_name             = outscale_keypair.ssh-keypair.keypair_name
+    security_group_ids       = [outscale_security_group.security_group_molecule.security_group_id]
+    tags {
+        key   = "name"
+        value = format("molecule-%s-%s",var.instance_name,var.run_name)
+    }
+}
+
+
+resource "outscale_public_ip" "my_public_ip" {
+  tags {
+    key = "name"
+    value = format("molecule-%s-%s",var.instance_name,var.run_name)
+  }
+}
+
+resource "outscale_public_ip_link" "my_public_ip_link" {
+  vm_id     = outscale_vm.my_vm.vm_id
+  public_ip = outscale_public_ip.my_public_ip.public_ip
+}
+
+
+output "my_public_ip" {
+  value = outscale_public_ip.my_public_ip.public_ip
+}
+
+output "mv_vm" {
+  value = outscale_vm.my_vm.tags
+}
+
+output "instance_name" {
+  value = var.instance_name
+}
+
+output "ssh_user" {
+  value = var.ssh_user
+}
+
+output "identity_file" {
+  value = var.private_key_path
+}
+
+output "ssh_port" {
+  value = var.ssh_port
+}
+
+output "workspace" {
+  value = var.run_name
+}

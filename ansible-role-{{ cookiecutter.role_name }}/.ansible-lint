@@ -1,0 +1,10 @@
+---
+exclude_paths:
+  - molecule/
+  - .pre-commit-config.yaml
+
+parseable: true
+
+use_default_rules: true
+
+verbosity: 1

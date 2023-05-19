@@ -1,0 +1,44 @@
+---
+- name: Set run_id
+  ansible.builtin.set_fact:
+    run_id: "{{ lookup('password', '/dev/null chars=ascii_lowercase length=5') }}"
+
+- name: Generate local key pairs
+  community.crypto.openssh_keypair:
+    path: "{{ platform.private_key_path }}"
+    type: rsa
+    size: 2048
+    regenerate: never
+- name: Create Terraform directory
+  ansible.builtin.file:
+    state: directory
+    path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/terraform/{{ run_id }}"
+    mode: "0755"
+- name: Create Terraform file from template
+  ansible.builtin.template:
+    src: main.tf.j2
+    dest: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/terraform/{{ run_id }}/main.tf"
+    mode: "0664"
+- name: Provision VM {{ platform.name }}
+  community.general.terraform:
+    project_path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/terraform/{{ run_id }}"
+    state: present
+    force_init: true
+  register: state
+- name: Create instance config file
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/instance_config.yml"
+    state: touch
+    mode: "0644"
+- name: Register instance config for VM {{ platform.name }}
+  ansible.builtin.blockinfile:
+    path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/instance_config.yml"
+    block: "- { address: {{ state.outputs.my_public_ip.value }} , identity_file: {{ platform.private_key_path }}, instance: {{ platform.name }}, port: {{ platform.ssh_port
+      }}, user: {{ platform.ssh_user }}, workspace: {{ run_id }} }"
+    marker: "# {mark} Instance : {{ platform.name }}"
+    marker_begin: BEGIN
+    marker_end: END
+- name: Add to group molecule_hosts {{ platform.name }}
+  ansible.builtin.add_host:
+    name: "{{ state.outputs.my_public_ip.value }}"
+    groups: molecule_hosts

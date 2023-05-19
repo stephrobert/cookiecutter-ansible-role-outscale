@@ -1,0 +1,64 @@
+---
+- name: Create
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  no_log: "{{ molecule_no_log }}"
+  vars:
+    default_assign_public_ip: true
+    default_accessid: "{{ lookup('env', 'OUTSCALE_ACCESSKEYID') }}"
+    default_secretid: "{{ lookup('env', 'OUTSCALE_SECRETKEYID') }}"
+    default_instance_type: tinav4.c1r1p2
+    default_private_key_path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/id_rsa"
+    default_public_key_path: "{{ default_private_key_path }}.pub"
+    default_ssh_user: outscale
+    default_region: eu-west-2
+    default_ssh_port: 22
+    default_user_data: ""
+    default_provider_version: ">= 0.8.2"
+    default_authorized_range_ip: ["0.0.0.0/0"]
+    platform_defaults:
+      authorized_range_ip: "{{ default_authorized_range_ip }}"
+      provider_version: "{{ default_provider_version }}"
+      assign_public_ip: "{{ default_assign_public_ip }}"
+      accessid: "{{ default_accessid }}"
+      secretid: "{{ default_secretid }}"
+      instance_type: "{{ default_instance_type }}"
+      private_key_path: "{{ default_private_key_path }}"
+      public_key_path: "{{ default_public_key_path }}"
+      ssh_user: "{{ default_ssh_user }}"
+      ssh_port: "{{ default_ssh_port }}"
+      image_name: ""
+      name: ""
+      region: "{{ default_region }}"
+
+    # Merging defaults into a list of dicts is, it turns out, not straightforward
+    platforms: >-
+      {{ [platform_defaults | dict2items]
+        | product(molecule_yml.platforms | map('dict2items') | list)
+        | map('flatten', levels=1)
+        | list
+        | map('items2dict')
+        | list }}
+
+  tasks:
+    - name: Create
+      ansible.builtin.include_tasks: terraform-create.yml
+      loop: "{{ platforms }}"
+      loop_control:
+        loop_var: platform
+
+- name: Test provisionned vm connection
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Test SSH Port available
+      ansible.builtin.wait_for:
+        host: "{{ item }}"
+        port: 22
+        delay: 30
+        timeout: 300
+        state: started
+      retries: 3
+      with_items: "{{ groups['molecule_hosts'] }}"
