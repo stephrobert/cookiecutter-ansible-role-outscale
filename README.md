@@ -2,9 +2,9 @@
 
 ## Description
 
-Ce cookiecutter permet de créer les structures des roles avec le driver molecule outsacle.
+Ce cookiecutter permet de créer les structures des roles avec le driver molecule delegated et en particulier avec outscale.
 
-## Usage
+## Utilisation
 
 ```bash
 cookiecutter gh:stephrobert/cookiecutter-ansible-role-outscale
