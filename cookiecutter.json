@@ -6,5 +6,6 @@
   "galaxy_tags": "stephrobert {{ cookiecutter.role_name }}",
   "dependencies": "",
   "init_repository": "y",
-  "os_specific_vars": "y"
+  "os_specific_vars": "y",
+  "_extensions": ["jinja2_ansible_filters.AnsibleCoreFiltersExtension"]
 }
