@@ -8,7 +8,7 @@
   "init_repository": "y",
   "os_specific_vars": "y",
   "_copy_without_render": [
-    "ansible-role-{{ cookiecutter.role_name }}/molecule/default/destroy.yml",
-    "ansible-role-{{ cookiecutter.role_name }}/molecule/default/create.yml"
+    "molecule/default/destroy.yml",
+    "molecule/default/create.yml"
 ]
 }
