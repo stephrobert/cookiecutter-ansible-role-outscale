@@ -7,5 +7,8 @@
   "dependencies": "",
   "init_repository": "y",
   "os_specific_vars": "y",
-  "_extensions": ["jinja2_ansible_filters.AnsibleCoreFiltersExtension"]
+  "_copy_without_render": [
+    "ansible-role-{{ cookiecutter.role_name }}/molecule/default/destroy.yml",
+    "ansible-role-{{ cookiecutter.role_name }}/molecule/default/create.yml"
+]
 }
