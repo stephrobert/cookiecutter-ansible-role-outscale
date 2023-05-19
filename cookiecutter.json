@@ -9,6 +9,7 @@
   "os_specific_vars": "y",
   "_copy_without_render": [
     "molecule/default/destroy.yml",
-    "molecule/default/create.yml"
+    "molecule/default/create.yml",
+    "molecule/default/terraform*.yml"
 ]
 }
